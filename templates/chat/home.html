@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}NexusChat{% endblock %}
+{% block body %}
+<div class="app-shell">
+
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar" id="sidebar">
+    <!-- Sidebar Header -->
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <div class="logo-icon logo-icon--sm"><i class="fa-solid fa-bolt"></i></div>
+        <span class="logo-text">NexusChat</span>
+      </div>
+      <div class="sidebar-actions">
+        <button class="icon-btn" id="searchToggleBtn" title="Search users">
+          <i class="fa fa-magnifying-glass"></i>
+        </button>
+        <button class="icon-btn" id="newGroupBtn" title="New group" onclick="window.location='{% url 'create_group' %}'">
+          <i class="fa fa-users"></i>
+        </button>
+        <div class="notif-wrapper">
+          <button class="icon-btn" id="notifBtn" title="Notifications">
+            <i class="fa fa-bell"></i>
+            {% if notifications > 0 %}<span class="notif-badge" id="notifBadge">{{ notifications }}</span>{% endif %}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="search-bar-container" id="searchBar" style="display:none">
+      <div class="search-bar">
+        <i class="fa fa-magnifying-glass"></i>
+        <input type="text" id="userSearchInput" placeholder="Search users..." autocomplete="off"/>
+      </div>
+      <div class="search-results" id="searchResults"></div>
+    </div>
+
+    <!-- Current User -->
+    <div class="current-user">
+      <a href="{% url 'profile' %}" class="user-avatar-link">
+        {% if request.user.profile.avatar %}
+          <img src="{{ request.user.profile.avatar.url }}" class="avatar avatar--sm" alt="You"/>
+        {% else %}
+          <div class="avatar avatar--sm avatar--placeholder">{{ request.user.username|first|upper }}</div>
+        {% endif %}
+      </a>
+      <div class="current-user-info">
+        <span class="current-user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+        <span class="online-dot-label"><span class="status-dot status-dot--online"></span> Online</span>
+      </div>
+      <a href="{% url 'logout' %}" class="icon-btn icon-btn--danger" title="Logout">
+        <i class="fa fa-right-from-bracket"></i>
+      </a>
+    </div>
+
+    <!-- Tabs -->
+    <div class="sidebar-tabs">
+      <button class="tab-btn tab-btn--active" data-tab="chats">
+        <i class="fa fa-message"></i> Chats
+      </button>
+      <button class="tab-btn" data-tab="contacts">
+        <i class="fa fa-address-book"></i> Contacts
+      </button>
+    </div>
+
+    <!-- Chats List -->
+    <div class="tab-content" id="tab-chats">
+      <div class="chat-list" id="chatList">
+        {% for item in rooms_data %}
+        <a href="{% url 'room' item.room.id %}" class="chat-item {% if item.room.id == active_room_id %}chat-item--active{% endif %}">
+          <div class="chat-item-avatar">
+            {% if item.avatar %}
+              <img src="{{ item.avatar }}" class="avatar avatar--md" alt="{{ item.name }}"/>
+            {% else %}
+              <div class="avatar avatar--md avatar--placeholder">{{ item.name|first|upper }}</div>
+            {% endif %}
+            {% if item.is_online %}<span class="status-dot status-dot--online status-dot--corner"></span>{% endif %}
+          </div>
+          <div class="chat-item-info">
+            <div class="chat-item-top">
+              <span class="chat-item-name">{{ item.name }}</span>
+              {% if item.last_message %}
+              <span class="chat-item-time">{{ item.last_message.timestamp|date:"H:i" }}</span>
+              {% endif %}
+            </div>
+            <div class="chat-item-bottom">
+              <span class="chat-item-preview">
+                {% if item.last_message %}
+                  {% if item.last_message.message_type == 'image' %}
+                    <i class="fa fa-image"></i> Photo
+                  {% elif item.last_message.message_type == 'file' %}
+                    <i class="fa fa-paperclip"></i> File
+                  {% else %}
+                    {{ item.last_message.content|truncatechars:35 }}
+                  {% endif %}
+                {% else %}
+                  No messages yet
+                {% endif %}
+              </span>
+              {% if item.unread_count > 0 %}
+              <span class="unread-badge">{{ item.unread_count }}</span>
+              {% endif %}
+            </div>
+          </div>
+        </a>
+        {% empty %}
+        <div class="empty-list">
+          <i class="fa fa-comments"></i>
+          <p>No chats yet.<br/>Search for users to start chatting.</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Contacts List -->
+    <div class="tab-content" id="tab-contacts" style="display:none">
+      <div class="chat-list">
+        {% for u in users %}
+        <a href="{% url 'start_private_chat' u.id %}" class="chat-item">
+          <div class="chat-item-avatar">
+            {% if u.profile.avatar %}
+              <img src="{{ u.profile.avatar.url }}" class="avatar avatar--md" alt="{{ u.username }}"/>
+            {% else %}
+              <div class="avatar avatar--md avatar--placeholder">{{ u.username|first|upper }}</div>
+            {% endif %}
+            {% if u.profile.is_online %}<span class="status-dot status-dot--online status-dot--corner"></span>{% endif %}
+          </div>
+          <div class="chat-item-info">
+            <div class="chat-item-top">
+              <span class="chat-item-name">{{ u.get_full_name|default:u.username }}</span>
+            </div>
+            <div class="chat-item-bottom">
+              <span class="chat-item-preview">@{{ u.username }}</span>
+            </div>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Welcome Panel (no room selected) ── -->
+  <main class="chat-panel welcome-panel">
+    <div class="welcome-content">
+      <div class="welcome-icon"><i class="fa-solid fa-bolt"></i></div>
+      <h2>Welcome to NexusChat</h2>
+      <p>Select a conversation or search for users to start messaging.</p>
+      <div class="welcome-actions">
+        <button class="btn-primary" onclick="document.getElementById('searchToggleBtn').click()">
+          <i class="fa fa-magnifying-glass"></i> Find Someone
+        </button>
+        <a href="{% url 'create_group' %}" class="btn-secondary">
+          <i class="fa fa-users"></i> New Group
+        </a>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<script>
+// Tab switching
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-btn--active'));
+    btn.classList.add('tab-btn--active');
+    const tab = btn.dataset.tab;
+    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+    document.getElementById('tab-' + tab).style.display = 'block';
+  });
+});
+
+// Search toggle
+document.getElementById('searchToggleBtn').addEventListener('click', () => {
+  const sb = document.getElementById('searchBar');
+  sb.style.display = sb.style.display === 'none' ? 'block' : 'none';
+  if (sb.style.display === 'block') document.getElementById('userSearchInput').focus();
+});
+
+// User search
+let searchTimeout;
+document.getElementById('userSearchInput').addEventListener('input', function() {
+  clearTimeout(searchTimeout);
+  const q = this.value.trim();
+  if (q.length < 2) { document.getElementById('searchResults').innerHTML = ''; return; }
+  searchTimeout = setTimeout(() => {
+    fetch(`/api/search-users/?q=${encodeURIComponent(q)}`)
+      .then(r => r.json())
+      .then(data => {
+        const container = document.getElementById('searchResults');
+        if (!data.users.length) { container.innerHTML = '<p class="no-results">No users found</p>'; return; }
+        container.innerHTML = data.users.map(u =>
+          `<a href="/chat/start/${u.id}/" class="search-result-item">
+            <div class="avatar avatar--sm avatar--placeholder">${u.name[0].toUpperCase()}</div>
+            <div><strong>${u.name}</strong><span>@${u.username}</span></div>
+          </a>`
+        ).join('');
+      });
+  }, 300);
+});
+
+// Presence WebSocket
+const presenceWs = new WebSocket(`ws://${window.location.host}/ws/presence/`);
+presenceWs.onmessage = (e) => {
+  const data = JSON.parse(e.data);
+  if (data.type === 'user_status') {
+    // Update status dots in sidebar
+    document.querySelectorAll(`[data-user-id="${data.user_id}"] .status-dot--corner`).forEach(dot => {
+      dot.style.display = data.is_online ? 'block' : 'none';
+    });
+  }
+};
+</script>
+{% endblock %}

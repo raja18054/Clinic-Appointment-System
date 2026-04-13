@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% load widget_tweaks static %}
+{% block title %}New Group — NexusChat{% endblock %}
+{% block body %}
+<div class="auth-page">
+  <div class="auth-glow"></div>
+  <div class="auth-card auth-card--wide">
+    <a href="{% url 'home' %}" class="back-link"><i class="fa fa-arrow-left"></i> Back to chats</a>
+    <div class="auth-logo">
+      <div class="logo-icon"><i class="fa-solid fa-users"></i></div>
+    </div>
+    <h2 class="auth-title">Create Group Chat</h2>
+    <p class="auth-subtitle">Add a name and select members</p>
+
+    <form method="post" enctype="multipart/form-data" class="auth-form">
+      {% csrf_token %}
+      <div class="form-group">
+        <label>Group Name *</label>
+        {{ form.name|add_class:"form-input" }}
+        {% if form.name.errors %}<span class="field-error">{{ form.name.errors.0 }}</span>{% endif %}
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        {{ form.description|add_class:"form-input" }}
+      </div>
+      <div class="form-group">
+        <label>Group Icon (optional)</label>
+        {{ form.avatar|add_class:"form-input" }}
+      </div>
+      <div class="form-group">
+        <label>Members *</label>
+        <div class="members-checkbox-list">
+          {% for choice in form.members %}
+          <label class="member-checkbox-item">
+            {{ choice.tag }}
+            <span>{{ choice.choice_label }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        {% if form.members.errors %}<span class="field-error">{{ form.members.errors.0 }}</span>{% endif %}
+      </div>
+      <button type="submit" class="btn-primary btn-full">
+        <span>Create Group</span>
+        <i class="fa fa-check"></i>
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}

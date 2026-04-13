@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% load widget_tweaks static %}
+{% block title %}Profile — NexusChat{% endblock %}
+{% block body %}
+<div class="auth-page">
+  <div class="auth-glow"></div>
+  <div class="auth-card auth-card--wide">
+    <a href="{% url 'home' %}" class="back-link"><i class="fa fa-arrow-left"></i> Back to chats</a>
+    <h2 class="auth-title">Your Profile</h2>
+
+    <div class="profile-avatar-section">
+      {% if profile.avatar %}
+        <img src="{{ profile.avatar.url }}" class="avatar avatar--xl" alt="Profile"/>
+      {% else %}
+        <div class="avatar avatar--xl avatar--placeholder">{{ request.user.username|first|upper }}</div>
+      {% endif %}
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="auth-form">
+      {% csrf_token %}
+      <div class="form-row">
+        <div class="form-group">
+          <label>First Name</label>
+          {{ form.first_name|add_class:"form-input" }}
+        </div>
+        <div class="form-group">
+          <label>Last Name</label>
+          {{ form.last_name|add_class:"form-input" }}
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Bio</label>
+        {{ form.bio|add_class:"form-input" }}
+      </div>
+      <div class="form-group">
+        <label>Profile Photo</label>
+        {{ form.avatar|add_class:"form-input" }}
+      </div>
+      <button type="submit" class="btn-primary btn-full">
+        <span>Save Changes</span>
+        <i class="fa fa-check"></i>
+      </button>
+    </form>
+  </div>
+</div>
+{% endblock %}
