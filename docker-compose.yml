@@ -1,0 +1,42 @@
+version: '3.9'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: nexuschat_redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    container_name: nexuschat_web
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             daphne -b 0.0.0.0 -p 8000 nexuschat.asgi:application"
+    volumes:
+      - .:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    ports:
+      - "8000:8000"
+    environment:
+      - DJANGO_SETTINGS_MODULE=nexuschat.settings
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=nexuschat-super-secret-key-change-in-production-12345
+      - DEBUG=True
+      - ALLOWED_HOSTS=*
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  static_volume:
+  media_volume:

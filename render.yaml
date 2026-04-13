@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: nexuschat
+    env: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: "*"
+      - key: REDIS_URL
+        fromService:
+          name: nexuschat-redis
+          type: redis
+          property: connectionString
+
+  - type: redis
+    name: nexuschat-redis
+    plan: free
+    maxmemoryPolicy: noeviction
